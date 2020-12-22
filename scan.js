@@ -6,41 +6,45 @@ myURL = "https://juliencoquet.com/en/?foo=bar";
 const { chromium } = require('playwright');
 
 // Prep MySQL
-var mysql      = require('mysql');
+const mysql = require('mysql2/promise');
 const { exit } = require('process');
-connection = mysql.createConnection({
-  host     : 'localhost',
-  user     : 'root',
-  password : 'password',
-  database : 'gutentag'
+
+const pool = mysql.createPool({
+    host     : 'localhost',
+    user     : 'root',
+    password : 'password',
+    database : 'gutentag',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit:0
 });
 
 
-function logScan(url){
+
+async function logScan(url){
 
   // URL management
   scanURI = new URL(url); // URL string to URL
   scanURL = scanURI.href;
   scanDomain = scanURI.hostname;
 
-  connection.connect();
   var q = "INSERT INTO scans (scan_domain) VALUES ('" + scanDomain+ "');";
-  var res = "";
-  var query = connection.query(q, function (error, results, fields) {
-    if (error) throw error
-  });
-  console.log(query);
-  connection.end();
-  console.log("insert id : "+ res);
-  return res;
+  const result = await pool.query(q);
+  const insertId = result[0].insertId;
+  return insertId;
+  process.exit(0);
 }
 
+console.log(logScan(myURL));
+process.exit(0);
 
 function logCall(scan, call, payload){  
   callTime = Date.now();
   
   var q = "INSERT INTO calls (scan_id, call_url, call_payload, call_time) VALUES ('"+scan+"','"+call+"','"+payload+"','"+callTime+"');";
   console.log ("Sending query: " + q);
+
+  var connection = mysqlCnx();
   connection.connect();
   connection.query(q, function (error, results, fields) {
     if (error) {
@@ -54,8 +58,9 @@ function logCall(scan, call, payload){
 }
 
 function logURL(call, payload){
+  var connection = mysqlCnx();
   connection.connect();
-  var q = "INSERT INTO ;"
+  var q = "INSERT INTO url;"
   connection.query(q, function (error, results, fields) {
     if (error) throw error;
     console.log('The solution is: ', results);
@@ -63,11 +68,14 @@ function logURL(call, payload){
   connection.end();
 }
 
-console.log("Starting scan for " + myURL);
-startTime = new Date();
-let newscan = logScan(myURL);
-typeof(newscan);
-console.log("Insert ID for new scan:" +newscan);
+const newscan="";
+const startScan = async () =>{
+  console.log("Starting scan for " + myURL);
+  startTime = new Date();
+  newscan = await logScan(myURL);
+  console.log("Insert ID for new scan:" +newscan);
+  return newscan;
+}
 
 // Launching browser, everything below this is async
 (async () => {
@@ -86,13 +94,10 @@ console.log("Insert ID for new scan:" +newscan);
     console.log(route.request().url());
     console.log("REQUEST: "+request.url());
     console.log(request.url(), JSON.stringify(request.headers()));
-    
     */
    const request = route.request();
    
-   console.log(request.url() == undefined ? "FUCK":"FUUUUUCK");   
     if (request.url()!="undefined"){
-      exit;
       rec = logCall(newscan, request.url(), JSON.stringify(request.headers()));
     }
     return route.continue();
