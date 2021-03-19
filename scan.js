@@ -5,6 +5,8 @@ myURL = "https://juliencoquet.com/en/?foo=bar";
 //define browser type 
 const { chromium } = require('playwright');
 
+
+
 // Prep MySQL
 const mysql = require('mysql2/promise');
 const { exit } = require('process');
@@ -35,8 +37,11 @@ async function logScan(url){
   process.exit(0);
 }
 
+/*
 console.log(logScan(myURL));
 process.exit(0);
+*/
+
 
 function logCall(scan, call, payload){  
   callTime = Date.now();
@@ -104,11 +109,14 @@ const startScan = async () =>{
   });
   
   await page.goto(myURL);
+  cookies = await context.cookies()
+  console.log(cookies);
   await page.click('#onetrust-accept-btn-handler');
   await page.waitForLoadState('networkidle');
+  
   await browser.close();
   endTime = new Date();
   scanTime = startTime - endTime;
   //TODO update scan time
-
+  
 })();
