@@ -56,6 +56,7 @@ function logHit(file, message) {
   });
 }
 
+
 // Prep MySQL
 const mysql = require('mysql2/promise');
 const { exit } = require('process');
@@ -126,16 +127,6 @@ const newscan = "";
 console.log("Starting scan for " + myURL);
 startTime = new Date();
 
-/*
-const startScan = async () =>{
-  console.log("Starting scan for " + myURL);
-  startTime = new Date();
-  newscan = await logScan(myURL);
-  console.log("Insert ID for new scan:" +newscan);
-  return newscan;
-}
-*/
-
 // Launching browser, everything below this is async
 (async () => {
 
@@ -148,12 +139,6 @@ const startScan = async () =>{
 
   // Log and continue all network requests
   page.route('**', route => {
-
-    /*
-    console.log(route.request().url());
-    console.log("REQUEST: "+request.url());
-    console.log(request.url(), JSON.stringify(request.headers()));
-    */
     const request = route.request();
 
     if (request.url() != "undefined") {

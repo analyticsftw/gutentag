@@ -10,9 +10,16 @@ filename = myArgs[1] ?  myArgs[1] : "mightyhive.csv";
 const { chromium } = require('playwright');
 
 
+// Add quotes to string, esp. for CSVs/text lines
+function addQuotes(string, quote='"'){
+  var msg = quote + string + quote;
+  return msg;
+}
+
+
 function hit2csv(hit,filename,site){
   callTime = Date.now();
-  message = [callTime,site,hit];
+  message = [addQuotes(callTime),addQuotes(site),addQuotes(hit)];
   line = message.join(";");
   try {
     logHit(filename,line);
@@ -65,7 +72,6 @@ function cookie2csv(cookie,filename,phase="before") {
 function logHit(file, message) {
   fs.appendFile(file, message+"\n", function (err) {
     if (err) {throw err; console.log(err);};
-    //console.log('Saved to '+file);
   });
 }
 
@@ -90,8 +96,12 @@ startTime = new Date();
     var rs = request.url();
     if (rs != "undefined") {
       hitdomains = [
-        "google-analytics.com",
-        "googletagmanager.com",
+        "google-analytics.com/collect",
+        "google-analytics.com/g/collect",
+        "google-analytics.com/j/collect",
+        "google-analytics.com/r/collect",
+        "google-analytics.com/__utm.gif",
+        "googletagmanager.com/gtm.js",
         "googleoptimize.com"
       ];
       for (var i=0;i<hitdomains.length;i++){
@@ -106,11 +116,13 @@ startTime = new Date();
   });
 
   await page.goto(myURL);
+  var dl = await page.evaluate(() => dataLayer);
   await page.waitForLoadState('networkidle');
   await browser.close();
   endTime = new Date();
   scanTime =  endTime - startTime;
   console.log("Scanned " + myURL + " in " + scanTime+ "s");
+  console.table(dl);
   //TODO update scan time
 
 })();
