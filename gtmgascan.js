@@ -117,12 +117,13 @@ startTime = new Date();
 
   await page.goto(myURL);
   var dl = await page.evaluate(() => dataLayer);
+  await page.click('#onetrust-accept-btn-handler');
   await page.waitForLoadState('networkidle');
   await browser.close();
   endTime = new Date();
   scanTime =  endTime - startTime;
   console.log("Scanned " + myURL + " in " + scanTime+ "s");
-  console.table(dl);
+  //console.table(dl);
   //TODO update scan time
 
 })();
