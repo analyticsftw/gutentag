@@ -11,10 +11,6 @@ const { chromium } = require('playwright');
 var myArgs = process.argv.slice(2);
 myURL = myArgs[0] ? myArgs[0] : "https://mightyhive.com/";
 filename = myArgs[1] ?  myArgs[1] : "mightyhive.csv";
-//TODO: add support for passing start URL via command line or query string
-
-
-
 
 console.log("Starting scan for " + myURL);
 startTime = new Date();

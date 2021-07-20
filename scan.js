@@ -10,6 +10,7 @@
 
 /* Dependencies */
 fs = require('fs')
+var sf = require('./support_functions.js');
 
 // start URL
 var myArgs = process.argv.slice(2);
@@ -19,53 +20,6 @@ filename = myArgs[1] ?  myArgs[1] : "mightyhive_cookies.csv";
 
 //define browser type 
 const { chromium } = require('playwright');
-
-function cookie2csv(cookie,filename,phase="before") {
-  const { Parser } = require('json2csv');
-  const fields = [
-    'date', 
-    'siteURL', 
-    'phase',
-    'sameSite', 
-    'name', 
-    'value', 
-    'domain', 
-    'path', 
-    'expires', 
-    'httpOnly', 
-    'secure'
-  ];
-  const opts = { fields };
-
-  // Inject cookie timestamp
-  callTime = Date.now();
-  var cl = 0; cl = cookie.length;
-  for (i = 0; i < cl; i++) {
-    cookie[i].date=callTime;
-    cookie[i].phase=phase;
-  }
-  try {
-    const parser = new Parser(opts);
-    const csv = parser.parse(cookies)
-    // remove headers
-    var lines = csv.split('\n');
-    // remove one line, starting at the first position
-    lines.splice(0,1);
-    // join the array back into a single string
-    var output = lines.join('\n');
-    logHit(filename,output)
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-
-function logHit(file, message) {
-  fs.appendFile(file, message, function (err) {
-    if (err) throw err;
-    console.log('Saved to '+file);
-  });
-}
 
 const newscan = "";
 console.log("Starting scan for " + myURL);
@@ -92,14 +46,14 @@ startTime = new Date();
     return route.continue();
   });
   */
-  logHit(filename,"\n");
+  sf.logHit(filename,"\n");
   await page.goto(myURL);
   cookies = await context.cookies();
   var cl = 0; cl = cookies.length;
   for (i = 0; i < cl; i++) {
     cookies[i].siteURL = myURL;
   }
-  cookie2csv(cookies,filename,"before");
+  sf.cookie2csv(cookies,filename,"before");
   await page.click('#onetrust-accept-btn-handler');
   cookies = await context.cookies();
   var cl = 0; cl = cookies.length;
@@ -107,7 +61,7 @@ startTime = new Date();
     cookies[i].siteURL = myURL;
   }
   await page.waitForLoadState('networkidle');
-  cookie2csv(cookies,filename,"after");
+  sf.cookie2csv(cookies,filename,"after");
   await browser.close();
   endTime = new Date();
   scanTime =  endTime - startTime;
