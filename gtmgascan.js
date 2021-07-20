@@ -1,4 +1,11 @@
+/** 
+ * 
+ * 
+*/
+
+// Dependencies
 fs = require('fs')
+const { chromium } = require('playwright');
 
 // start URL
 var myArgs = process.argv.slice(2);
@@ -6,21 +13,29 @@ myURL = myArgs[0] ? myArgs[0] : "https://mightyhive.com/";
 filename = myArgs[1] ?  myArgs[1] : "mightyhive.csv";
 //TODO: add support for passing start URL via command line or query string
 
-//define browser type 
-const { chromium } = require('playwright');
 
-
-// Add quotes to string, esp. for CSVs/text lines
+/** Add quotes to string, esp. for CSVs/text lines
+ * @param  {} string : the string being passed
+ * @param  {} quote : quote delimiter character, defaults to double quote '"'
+ */
 function addQuotes(string, quote='"'){
   var msg = quote + string + quote;
   return msg;
 }
 
 
+/** function to log each server call routed from playwright to CSV, assuming it matches the list of predefined tags
+ * @param  {} hit : the server call payload
+ * @param  {} filename : the output file
+ * @param  {} site : the URL being analyzed
+ */
 function hit2csv(hit,filename,site){
+  // Create timestamp for each call
   callTime = Date.now();
+  // Sanitize inputs
   message = [addQuotes(callTime),addQuotes(site),addQuotes(hit)];
   line = message.join(";");
+  // Log each call to CSV
   try {
     logHit(filename,line);
   } catch (err) {
@@ -28,47 +43,10 @@ function hit2csv(hit,filename,site){
   }
 }
 
-
-function cookie2csv(cookie,filename,phase="before") {
-  const { Parser } = require('json2csv');
-  const fields = [
-    'date', 
-    'siteURL', 
-    'phase',
-    'sameSite', 
-    'name', 
-    'value', 
-    'domain', 
-    'path', 
-    'expires', 
-    'httpOnly', 
-    'secure'
-  ];
-  const opts = { fields };
-
-  // Inject cookie timestamp
-  callTime = Date.now();
-  var cl = 0; cl = cookie.length;
-  for (i = 0; i < cl; i++) {
-    cookie[i].date=callTime;
-    cookie[i].phase=phase;
-  }
-  try {
-    const parser = new Parser(opts);
-    const csv = parser.parse(cookies)
-    // remove headers
-    var lines = csv.split('\n');
-    // remove one line, starting at the first position
-    lines.splice(0,1);
-    // join the array back into a single string
-    var output = lines.join('\n');
-    logHit(filename,output)
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-
+/** Simple file output function
+ * @param  {} file
+ * @param  {} message
+ */
 function logHit(file, message) {
   fs.appendFile(file, message+"\n", function (err) {
     if (err) {throw err; console.log(err);};
@@ -76,17 +54,13 @@ function logHit(file, message) {
 }
 
 
-const newscan = "";
 console.log("Starting scan for " + myURL);
 startTime = new Date();
 
 // Launching browser, everything below this is async
 (async () => {
-
-  const browser = await chromium.launch({
-    headless: true
-  });
-
+  // Starting headless browser
+  const browser = await chromium.launch({headless: true});
   const context = await browser.newContext();
   const page = await context.newPage();
 
@@ -95,6 +69,7 @@ startTime = new Date();
     const request = route.request();
     var rs = request.url();
     if (rs != "undefined") {
+      // List of identified server calls to monitor and log
       hitdomains = [
         "google-analytics.com/collect",
         "google-analytics.com/g/collect",
@@ -105,25 +80,31 @@ startTime = new Date();
         "googleoptimize.com"
       ];
       for (var i=0;i<hitdomains.length;i++){
+        // If request found in list, log the call
         if (rs.indexOf(hitdomains[i])!==-1){
-          //console.log("found " + hitdomains[i] + " in " + rs + " at position " + rs.indexOf(hitdomains[i]));
           hit2csv(rs,filename,myURL);
         }
       }
-      //rec = logCall(newscan, request.url(), JSON.stringify(request.headers()));
     }
     return route.continue();
   });
 
+  // Navigate to the specified URL
   await page.goto(myURL);
+  // Google Tag Manager: look for data layer
   var dl = await page.evaluate(() => dataLayer);
+  // Consent: wait for OneTrust consent banner and click 'Accept'
   await page.click('#onetrust-accept-btn-handler');
+
+  // Close headless browser after traffic stops
   await page.waitForLoadState('networkidle');
   await browser.close();
+  
+  // Time calculation for performance reasons
   endTime = new Date();
   scanTime =  endTime - startTime;
   console.log("Scanned " + myURL + " in " + scanTime+ "s");
-  //console.table(dl);
+  
   //TODO update scan time
 
 })();

@@ -1,9 +1,20 @@
+/**
+ * node.js script that opens a headless browser and scans for cookies dropped without any user interaction
+ * 
+ * Usage:
+ *  node scan.js %URL% %outputfile%
+ *  e.g.
+ *  node scan.js https://www.mightyhive.com mightyhive.json
+*/
+
+
+/* Dependencies */
 fs = require('fs')
 
 // start URL
 var myArgs = process.argv.slice(2);
-myURL = myArgs[0] ? myArgs[0] : "https://juliencoquet.com/en/?foo=bar";
-filename = myArgs[1] ?  myArgs[1] : "cookies.csv";
+myURL = myArgs[0] ? myArgs[0] : "https://mightyhive.com/";
+filename = myArgs[1] ?  myArgs[1] : "mightyhive_cookies.csv";
 //TODO: add support for passing start URL via command line or query string
 
 //define browser type 
@@ -56,73 +67,6 @@ function logHit(file, message) {
   });
 }
 
-
-// Prep MySQL
-const mysql = require('mysql2/promise');
-const { exit } = require('process');
-
-const pool = mysql.createPool({
-  host: 'localhost',
-  user: 'root',
-  password: 'password',
-  database: 'gutentag',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
-
-
-
-async function logScan(url) {
-
-  // URL management
-  scanURI = new URL(url); // URL string to URL
-  scanURL = scanURI.href;
-  scanDomain = scanURI.hostname;
-
-  var q = "INSERT INTO scans (scan_domain) VALUES ('" + scanDomain + "');";
-  const result = await pool.query(q);
-  const insertId = result[0].insertId;
-  return insertId;
-  process.exit(0);
-}
-
-/*
-console.log(logScan(myURL));
-process.exit(0);
-*/
-
-
-function logCall(scan, call, payload) {
-  callTime = Date.now();
-
-  var q = "INSERT INTO calls (scan_id, call_url, call_payload, call_time) VALUES ('" + scan + "','" + call + "','" + payload + "','" + callTime + "');";
-  console.log("Sending query: " + q);
-
-  var connection = mysqlCnx();
-  connection.connect();
-  connection.query(q, function (error, results, fields) {
-    if (error) {
-      throw error
-      console.log(error);
-    };
-    //console.log('The solution is: ', results);
-    // Let MySQL work
-  });
-  connection.end();
-}
-
-function logURL(call, payload) {
-  var connection = mysqlCnx();
-  connection.connect();
-  var q = "INSERT INTO url;"
-  connection.query(q, function (error, results, fields) {
-    if (error) throw error;
-    console.log('The solution is: ', results);
-  });
-  connection.end();
-}
-
 const newscan = "";
 console.log("Starting scan for " + myURL);
 startTime = new Date();
@@ -134,9 +78,10 @@ startTime = new Date();
     headless: true
   });
 
-  const context = await browser.newContext();
+  const context = await browser.newContext({ignoreHTTPSErrors:true});
   const page = await context.newPage();
 
+  /*
   // Log and continue all network requests
   page.route('**', route => {
     const request = route.request();
@@ -146,7 +91,7 @@ startTime = new Date();
     }
     return route.continue();
   });
-
+  */
   logHit(filename,"\n");
   await page.goto(myURL);
   cookies = await context.cookies();
