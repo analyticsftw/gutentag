@@ -4,7 +4,7 @@
 */
 
 // Dependencies
-fs = require('fs')
+var sf = require('./support_functions.js');
 const { chromium } = require('playwright');
 
 // start URL
@@ -14,44 +14,6 @@ filename = myArgs[1] ?  myArgs[1] : "mightyhive.csv";
 //TODO: add support for passing start URL via command line or query string
 
 
-/** Add quotes to string, esp. for CSVs/text lines
- * @param  {} string : the string being passed
- * @param  {} quote : quote delimiter character, defaults to double quote '"'
- */
-function addQuotes(string, quote='"'){
-  var msg = quote + string + quote;
-  return msg;
-}
-
-
-/** function to log each server call routed from playwright to CSV, assuming it matches the list of predefined tags
- * @param  {} hit : the server call payload
- * @param  {} filename : the output file
- * @param  {} site : the URL being analyzed
- */
-function hit2csv(hit,filename,site){
-  // Create timestamp for each call
-  callTime = Date.now();
-  // Sanitize inputs
-  message = [addQuotes(callTime),addQuotes(site),addQuotes(hit)];
-  line = message.join(";");
-  // Log each call to CSV
-  try {
-    logHit(filename,line);
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-/** Simple file output function
- * @param  {} file
- * @param  {} message
- */
-function logHit(file, message) {
-  fs.appendFile(file, message+"\n", function (err) {
-    if (err) {throw err; console.log(err);};
-  });
-}
 
 
 console.log("Starting scan for " + myURL);
@@ -82,7 +44,7 @@ startTime = new Date();
       for (var i=0;i<hitdomains.length;i++){
         // If request found in list, log the call
         if (rs.indexOf(hitdomains[i])!==-1){
-          hit2csv(rs,filename,myURL);
+          sf.hit2csv(rs,filename,myURL);
         }
       }
     }
