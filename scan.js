@@ -54,7 +54,8 @@ startTime = new Date();
     cookies[i].siteURL = myURL;
   }
   sf.cookie2csv(cookies,filename,"before");
-  await page.click('#onetrust-accept-btn-handler');
+  //await page.click('#onetrust-accept-btn-handler');
+  await page.click('#accept-all-cookies');
   cookies = await context.cookies();
   var cl = 0; cl = cookies.length;
   for (i = 0; i < cl; i++) {

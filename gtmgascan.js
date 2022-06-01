@@ -29,13 +29,31 @@ startTime = new Date();
     if (rs != "undefined") {
       // List of identified server calls to monitor and log
       hitdomains = [
+        // Google Analytics
         "google-analytics.com/collect",
         "google-analytics.com/g/collect",
         "google-analytics.com/j/collect",
         "google-analytics.com/r/collect",
+        
+        // Google Analytics legacy Urchin.js
         "google-analytics.com/__utm.gif",
+        
+        // Google Tag Manager
         "googletagmanager.com/gtm.js",
-        "googleoptimize.com"
+        
+        // Google Optimize
+        "googleoptimize.com",
+
+        // Google Marketing Platform
+        "doubleclick.net",
+        "ads.google.com",
+
+        // Adobe Analytics
+        "/b/ss",
+        "2o7.net",
+
+        // Tealium IQ TMS
+        "tiqcdn.com"
       ];
       for (var i=0;i<hitdomains.length;i++){
         // If request found in list, log the call
@@ -50,10 +68,17 @@ startTime = new Date();
   // Navigate to the specified URL
   await page.goto(myURL);
   // Google Tag Manager: look for data layer
-  var dl = await page.evaluate(() => dataLayer);
+  try {
+    var dl = await page.evaluate(() => dataLayer);
+    console.log(dl.length);
+  } catch (e) {
+    console.log('dataLayer could not be evaluated ', e);
+  }
+  
   // Consent: wait for OneTrust consent banner and click 'Accept'
+  //await page.click('#onetrust-accept-btn-handler');
+  //await page.click('div.sb.sc.br.ne.bn.sd.se.c6.sf.mc.sg.hq.sh > div > div > div > div.bn.hq > button');
   await page.click('#onetrust-accept-btn-handler');
-
   // Close headless browser after traffic stops
   await page.waitForLoadState('networkidle');
   await browser.close();
